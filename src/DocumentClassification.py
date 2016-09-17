@@ -106,12 +106,12 @@ def map_reduce():
     db.TotalCounts.drop()
     db.WordCounts.drop()
 
-    mapper = Code(open('map_reduce/map_type_one.js','r').read())
-    reducer = Code(open('map_reduce/reduce_type_one.js','r').read())
+    mapper = Code(open('map_reduce/map_type_one.js', 'r').read())
+    reducer = Code(open('map_reduce/reduce_type_one.js', 'r').read())
     db.train.map_reduce(mapper, reducer, "TotalCounts")
 
-    mapper_two = Code(open('map_reduce/map_type_two.js','r').read())
-    reducer_two = Code(open('map_reduce/reduce_type_two.js','r').read())
+    mapper_two = Code(open('map_reduce/map_type_two.js', 'r').read())
+    reducer_two = Code(open('map_reduce/reduce_type_two.js', 'r').read())
     db.train.map_reduce(mapper_two, reducer_two, "WordCounts")
 
     dict_temp = db.TotalCounts.find_one()['value']

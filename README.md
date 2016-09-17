@@ -1,19 +1,30 @@
-# DocumentClassification
-Implementation of Multinomial Naive Bayes for document classification: MongoDB + MapReduce
+# Document Classification#
+Multinomial Naive Bayes classifier for document classification.
 
-System Specification:
-Python 2.7
+## Purpose ##
+The project I did for my Information Retrieval course. This project is solely for sharing my implementation, not for further development.
 
-Python Libraries: NLTK, Pymongo
+## Description ##
+The implementation of Naive Bayes classifier for classification of 120 blog files. The classifier is implemented on top of NoSQL database MongoDB. The MapReduce model is used for text categorization task. The algorithm returns a confusion matrix as an output.
 
+## Data ##
+The original data collection consisted of 120 files. The `fortnow` files correspond to posts from the Computational Complexity blog by Prof Lance Fortnow. The `random` files come from blogs chosen “at random” by a human. The dataset was split in two parts:  
 
-1. to create a collection with preprocessed files, comment  lines 69 and 87 
+* `data/train` : fortnow1 - fortnow30, random1 - random30
+* `data/test` : fortnow31 - fortnow60, random31 - random60.
 
-  d['content'] = create_content(file) 
-  and uncomment lines 70 and 88.
+## Stack ##
+* Language : Python 2.7
+* Libraries : Pymongo, nltk, Math, os, glob, codecs, re, bson
 
-2. specify the full path to folders with train docs and test docs for functions
-   create_train_collection() and create_test_collection()
+## How to run ##
+* Start the server (`mongod`) on your machine by running the following command in terminal : `mongod -dbpath <path>`
+* Start the client (`mongo`) by running the following command in terminal : `mongo`
+* Run `DocumentClassification.py`
 
-3. specify the full path to map/reduce .js files for functions
-	map_reduce() and confusion_matrix()
+## Notes ##
+* To create a collection with preprocessed files, in functions `create_train_collection` and `create_test_collection` :
+comment the line : `my_dict['content'] = create_content(file)`
+uncomment the line : `my_dict['content'] = create_preprocessed_content(file)`
+* For a full description of data pre-processing, formulas and results check my report in the `docs` folder.
+
