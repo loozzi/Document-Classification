@@ -24,7 +24,7 @@ The original data collection consisted of 120 files. The `fortnow` files corresp
 
 ## Notes ##
 * To create a collection with preprocessed files, in functions `create_train_collection` and `create_test_collection` :
-comment the line : `my_dict['content'] = create_content(file)`
-uncomment the line : `my_dict['content'] = create_preprocessed_content(file)`
+comment the line `my_dict['content'] = create_content(file)`;
+uncomment the line `my_dict['content'] = create_preprocessed_content(file)`.
 * For a full description of data pre-processing, formulas and results check my report in the `docs` folder.
 
