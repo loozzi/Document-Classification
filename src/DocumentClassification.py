@@ -1,49 +1,43 @@
-__author__ = 'maria slanova'
-import os
-import glob
-from codecs import encode, decode
-from pymongo import MongoClient
-import re
-from bson.code import Code
-from nltk.corpus import stopwords
+import csv
 import math
+import os
+import re
 
-conn = MongoClient()
-db = conn.test
+from bson.code import Code
+from dotenv import load_dotenv
+from nltk.corpus import stopwords
+from pymongo import MongoClient
+from sklearn.model_selection import train_test_split
+
+load_dotenv()
+
+MONGODB_URI = os.getenv("MONGODB_URI")
+conn = MongoClient(MONGODB_URI)
+db = conn.email_spam_filtering
 # total number of documents in train/test set
 n = 60
 
 
-def listdir_no_hidden(path):
-    return glob.glob(os.path.join(path, '*'))
-
-
-def create_content(filename):
-
-    with open(filename) as f:
-        text = []
-        for line in f:
-            for word in line.strip().split():
-                word = decode(word.strip(), 'latin2', 'ignore')
-                text.append(word)
+def create_content(content):
+    text = []
+    for word in content.strip().split():
+        word = word.encode("latin2", "ignore").decode("utf-8")
+        text.append(word)
     return text
 
 
-def create_preprocessed_content(filename):
+def create_preprocessed_content(content):
     """
     :param filename:
     :return: preprocessed text (string)
     """
+    text = []
 
-    with open(filename) as f:
-        text = []
-        for line in f:
-            new_line = text_to_words(line)
-            for word in new_line.strip().split():
-                word = decode(word.strip(), 'latin2', 'ignore')
-                text.append(word)
+    new_line = text_to_words(content)
+    for word in new_line.strip().split():
+        word = word.encode("latin2", "ignore").decode("utf-8")
+        text.append(word)
     return text
-
 
 
 def text_to_words(raw_text):
@@ -57,67 +51,89 @@ def text_to_words(raw_text):
     words = letters_only.lower().split()
     stops = set(stopwords.words("english"))
     # Remove stop words
-    meaningful_words = [w for w in words if not w in stops]
+    meaningful_words = [w for w in words if w not in stops]
     # Join the words back into one string separated by space,
     # and return the result.
     return " ".join(meaningful_words)
 
 
-def create_train_collection():
-
+def create_train_collection(train_dataset):
     db.train.drop()
-    for file in listdir_no_hidden("../data/train"):
+    for row in train_dataset:
         my_dict = {}
         class_x = 0
         class_y = 0
-        my_dict['content'] = create_content(file)
-        # my_dict['content'] = create_preprocessed_content(file)
-        if "fortnow" in file:
+        # my_dict["content"] = create_content(row['text'])
+        my_dict["content"] = create_preprocessed_content(row["text"])
+        if row["spam"] == 1:
             class_x = 1
         else:
             class_y = 1
-        my_dict['classX'] = class_x
-        my_dict['classY'] = class_y
+        my_dict["classX"] = class_x
+        my_dict["classY"] = class_y
         db.train.insert_one(my_dict)
 
+    print("Train collection created")
 
-def create_test_collection():
 
+def create_test_collection(test_dataset):
     db.test.drop()
-    for file in listdir_no_hidden("../data/test"):
+    for row in test_dataset:
         my_dict = {}
         class_x = 0
         class_y = 0
-        my_dict['content'] = create_content(file)
-        # my_dict['content'] = create_preprocessed_content(file)
-        if "fortnow" in file:
+        # my_dict["content"] = create_content(row['text'])
+        my_dict["content"] = create_preprocessed_content(row["text"])
+        if row["spam"] == 1:
             class_x = 1
         else:
             class_y = 1
-        my_dict['classX'] = class_x
-        my_dict['classY'] = class_y
-        my_dict['predclassX'] = 0
-        my_dict['predclassY'] = 0
+        my_dict["classX"] = class_x
+        my_dict["classY"] = class_y
+        my_dict["predclassX"] = 0
+        my_dict["predclassY"] = 0
         db.test.insert_one(my_dict)
+
+    print("Test collection created")
+
+
+def create_data_collection():
+    dataset = []
+    with open("../data/emails.csv", "r") as f:
+        reader = csv.reader(f, delimiter=",")
+        headers = next(reader)
+
+        for row in reader:
+            email = {}
+            email[headers[0]] = row[0]
+            email[headers[1]] = int(row[1])
+            dataset.append(email)
+    train_dataset, test_dataset = train_test_split(
+        dataset, test_size=0.2, random_state=42, shuffle=True
+    )
+
+    create_train_collection(train_dataset)
+    create_test_collection(test_dataset)
 
 
 def map_reduce():
-
     db.TotalCounts.drop()
     db.WordCounts.drop()
 
-    mapper = Code(open('map_reduce/map_type_one.js', 'r').read())
-    reducer = Code(open('map_reduce/reduce_type_one.js', 'r').read())
+    mapper = Code(open("map_reduce/map_type_one.js", "r").read())
+    reducer = Code(open("map_reduce/reduce_type_one.js", "r").read())
     db.train.map_reduce(mapper, reducer, "TotalCounts")
+    print("TotalCounts collection created")
 
-    mapper_two = Code(open('map_reduce/map_type_two.js', 'r').read())
-    reducer_two = Code(open('map_reduce/reduce_type_two.js', 'r').read())
+    mapper_two = Code(open("map_reduce/map_type_two.js", "r").read())
+    reducer_two = Code(open("map_reduce/reduce_type_two.js", "r").read())
     db.train.map_reduce(mapper_two, reducer_two, "WordCounts")
+    print("WordCounts collection created")
 
-    dict_temp = db.TotalCounts.find_one()['value']
-    vocabulary = dict_temp['V']
-    class_x = dict_temp['clX']
-    class_y = dict_temp['clY']
+    dict_temp = db.TotalCounts.find_one()["value"]
+    vocabulary = dict_temp["V"]
+    class_x = dict_temp["clX"]
+    class_y = dict_temp["clY"]
 
     docs = db.train.find()
 
@@ -138,11 +154,11 @@ def naive_bayes_classifier():
     for doc in test_docs:
         sum_x = 0.0
         sum_y = 0.0
-        for word in doc['content']:
+        for word in doc["content"]:
             dict_two = db.WordCounts.find_one({"_id": word})
             if dict_two is not None:
-                word_class_x = dict_two['value']['classX']
-                word_class_y = dict_two['value']['classY']
+                word_class_x = dict_two["value"]["classX"]
+                word_class_y = dict_two["value"]["classY"]
             else:
                 word_class_x = 0.0
                 word_class_y = 0.0
@@ -151,24 +167,29 @@ def naive_bayes_classifier():
         x = sum_x + probability_class_x
         y = sum_y + probability_class_y
         if x > y:
-            db.test.update_one(doc, {'$set': {'predClassX': 1, 'predClassY': 0}})
+            db.test.update_one(doc, {"$set": {"predClassX": 1, "predClassY": 0}})
         else:
-            db.test.find_one_and_update(doc, {'$set': {'predClassX': 0, 'predClassY': 1}})
+            db.test.find_one_and_update(
+                doc, {"$set": {"predClassX": 0, "predClassY": 1}}
+            )
 
 
 def confusion_matrix():
     naive_bayes_classifier()
-    mapper = Code(open('map_reduce/map_type_three.js', 'r').read())
-    reducer = Code(open('map_reduce/reduce_type_three.js', 'r').read())
+    mapper = Code(open("map_reduce/map_type_three.js", "r").read())
+    reducer = Code(open("map_reduce/reduce_type_three.js", "r").read())
     db.test.map_reduce(mapper, reducer, "Results")
 
-    calculated_confusion_matrix = db.Results.find_one()['value']
+    calculated_confusion_matrix = db.Results.find_one()["value"]
 
-    print calculated_confusion_matrix
+    print(calculated_confusion_matrix)
 
     return calculated_confusion_matrix
 
 
-create_test_collection()
-create_train_collection()
+# create_test_collection()
+# create_train_collection()
+create_data_collection()
 a = confusion_matrix()
+
+print(a)
