@@ -58,7 +58,8 @@ def text_to_words(raw_text):
 
 
 def create_train_collection(train_dataset):
-    db.train.drop()
+    if "train" in db.list_collection_names():
+        db.train.drop()
     for row in train_dataset:
         my_dict = {}
         class_x = 0
@@ -77,7 +78,8 @@ def create_train_collection(train_dataset):
 
 
 def create_test_collection(test_dataset):
-    db.test.drop()
+    if "test" in db.list_collection_names():
+        db.test.drop()
     for row in test_dataset:
         my_dict = {}
         class_x = 0
@@ -117,20 +119,40 @@ def create_data_collection():
 
 
 def map_reduce():
-    db.TotalCounts.drop()
-    db.WordCounts.drop()
+    if "TotalCounts" in db.list_collection_names():
+        db.TotalCounts.drop()
+    if "WordCounts" in db.list_collection_names():
+        db.WordCounts.drop()
 
-    mapper = Code(open("map_reduce/map_type_one.js", "r").read())
-    reducer = Code(open("map_reduce/reduce_type_one.js", "r").read())
-    db.train.map_reduce(mapper, reducer, "TotalCounts")
-    print("TotalCounts collection created")
+    # mapper = Code(open("map_reduce/map_type_one.js", "r").read())
+    # reducer = Code(open("map_reduce/reduce_type_one.js", "r").read())
+    # db.train.map_reduce(mapper, reducer, "TotalCounts")
+    # print("TotalCounts collection created")
 
-    mapper_two = Code(open("map_reduce/map_type_two.js", "r").read())
-    reducer_two = Code(open("map_reduce/reduce_type_two.js", "r").read())
-    db.train.map_reduce(mapper_two, reducer_two, "WordCounts")
-    print("WordCounts collection created")
+    # mapper_two = Code(open("map_reduce/map_type_two.js", "r").read())
+    # reducer_two = Code(open("map_reduce/reduce_type_two.js", "r").read())
+    # db.train.map_reduce(mapper_two, reducer_two, "WordCounts")
+    # print("WordCounts collection created")
 
-    dict_temp = db.TotalCounts.find_one()["value"]
+    pipeline_total_counts = [
+        {
+            "$group": {
+                "_id": None,
+                "totalClassX": {"$sum": "$classX"},
+                "totalClassY": {"$sum": "$classY"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "clX": "$totalClassX",
+                "clY": "$totalClassY",
+                "V": {"$add": ["$totalClassX", "$totalClassY"]},
+            }
+        },
+    ]
+
+    dict_temp = list(db.train.aggregate(pipeline_total_counts))[0]
     vocabulary = dict_temp["V"]
     class_x = dict_temp["clX"]
     class_y = dict_temp["clY"]
