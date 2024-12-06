@@ -3,6 +3,7 @@ import re
 
 from nltk.corpus import stopwords
 from sklearn.model_selection import train_test_split
+from tqdm import tqdm
 
 def text_to_words(raw_text):
     # Remove non-letters
@@ -26,12 +27,35 @@ def create_preprocessed_content(content):
         text.append(word)
     return text
 
+def create_collection(all_dataset, db):
+    
+    if "all_data" in db.list_collection_names():
+        db.all_data.drop()
+    check_count_train = 0
+    pbar = tqdm(all_dataset)
+    for row in pbar:
+        my_dict = {}
+        class_x = 0
+        class_y = 0
+        my_dict["content"] = create_preprocessed_content(row["text"])
+        if row["spam"] == 1:
+            class_x = 1
+        else:
+            class_y = 1
+        my_dict["classX"] = class_x
+        my_dict["classY"] = class_y
+        db.all_data.insert_one(my_dict)
+        pbar.set_description(f"insert collection train {check_count_train}/{len(all_dataset)}")
+        check_count_train += 1
+    print("All data collection created")
 
 def create_train_collection(train_dataset, db):
+    
     if "train" in db.list_collection_names():
         db.train.drop()
     check_count_train = 0
-    for row in train_dataset:
+    pbar = tqdm(train_dataset)
+    for row in pbar:
         my_dict = {}
         class_x = 0
         class_y = 0
@@ -43,7 +67,7 @@ def create_train_collection(train_dataset, db):
         my_dict["classX"] = class_x
         my_dict["classY"] = class_y
         db.train.insert_one(my_dict)
-        print(f"{check_count_train}/{len(train_dataset)}")
+        pbar.set_description(f"insert collection train {check_count_train}/{len(train_dataset)}")
         check_count_train += 1
     print("Train collection created")
 
@@ -89,5 +113,6 @@ def create_data_collection(trainned=False, db=None):
     train_dataset, test_dataset = train_test_split(
         dataset, test_size=0.2, random_state=42, shuffle=True
     )
+    create_collection(dataset, db)
     create_train_collection(train_dataset, db)
     create_test_collection(test_dataset, db)

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email spam classifier</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            font-family: "Roboto", sans-serif;
+            font-weight: 300;
+            font-style: normal;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f5f5f5;
+        }
+
+        h3 {
+            font-family: "Exo 2", sans-serif;
+            font-weight: 700;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .email {
+            max-width: 1200px;
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            resize: none;
+        }
+
+        button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        span {
+            margin-top: 1rem;
+        }
+
+        p {
+            font-weight: 700;
+        }
+    </style>
+</head>
+
+<body>
+    <h3>Email spam classifier using map reduce in MongoDB demo</h3>
+    <form action="/classifier" method="POST">
+        <label for="email">Email content</label><br>
+        <textarea class="email" name="email" id="email" cols="30" rows="10"
+            placeholder="Enter email content"></textarea><br>
+        <button type="submit">Predict</button>
+    </form>
+    <span>Result: <p id="result"></p>
+    </span>
+</body>
+
+<script>
+    const form = document.querySelector('form');
+    const result = document.querySelector('#result');
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        result.textContent = 'Predicting...';
+        const formData = new FormData(form);
+        const email = formData.get('email');
+        const response = await fetch('/classifier', {
+            method: 'POST',
+            body: JSON.stringify({ email }),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        const data = await response.json();
+        result.textContent = data.result;
+    });
+</script>
+
+</html>

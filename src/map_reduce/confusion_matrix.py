@@ -1,50 +1,9 @@
-# Định nghĩa hàm confusion_matrix() để tính toán confusion matrix và các thông số Precision, Recall, F1-score
+from .pipeline_agg.pipeline_confusion import make_confusion_value
+import matplotlib.pyplot as plt
+
 def confusion_matrix(db=None):
     db.Results.drop()
-    pipe_line_TP = [
-        {
-            "$match": {
-                "classX": 1,
-                "predclassX": 1
-            }
-        },
-        {
-            "$count": "TruePositive"
-        }
-    ]
-    pipe_line_FP = [
-        {
-            "$match": {
-                "classX": 0,
-                "predclassX": 1
-            }
-        },
-        {
-            "$count": "FalsePositive"
-        }
-    ]
-    pipe_line_TN = [
-        {
-            "$match": {
-                "classX": 0,
-                "predclassX": 0
-            }
-        },
-        {
-            "$count": "TrueNegative"
-        }
-    ]
-    pipe_line_FN = [
-        {
-            "$match": {
-                "classX": 1,
-                "predclassX": 0
-            }
-        },
-        {
-            "$count": "FalseNegative"
-        }
-    ]
+    pipe_line_TP, pipe_line_FP, pipe_line_TN, pipe_line_FN = make_confusion_value()
     TP = 0
     FP = 0
     TN = 0
@@ -81,6 +40,16 @@ def confusion_matrix(db=None):
         "Recall": recall,
         "F1-score": f1_score
     }
+
+    plt.figure(figsize=(10, 10))
+    plt.matshow([[TP, FP], [FN, TN]], fignum=1)
+    plt.colorbar()
+    plt.title("Confusion Matrix")
+    plt.xlabel("Predicted")
+    plt.ylabel("Actual")
+    plt.xticks([0, 1], ["Spam", "Not spam"])
+    plt.yticks([0, 1], ["Spam", "Not spam"])
+    plt.show()
 
     db.Results.insert_one({"value": dict_result})
 
