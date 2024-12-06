@@ -2,23 +2,27 @@ import math
 
 from .create_data_collection import create_preprocessed_content
 
-class Naive_bayes_classifier:
-    def __init__(self, show=False, db=None, db1=None):
+
+class NaiveBayesClassifier:
+    def __init__(self, show=False, db=None):
         self.show = show
         self.db = db
-        self.db1 = db1
         self.vocabulary = self.db.TotalCounts.find_one()["V"]
         self.class_x = self.db.TotalCounts.find_one()["clX"]
         self.class_y = self.db.TotalCounts.find_one()["clY"]
-        self.denominator_x = self.class_x + self.vocabulary  # Dùng cho add-one smoothing
-        self.denominator_y = self.class_y + self.vocabulary  # Dùng cho add-one smoothing
+        self.denominator_x = (
+            self.class_x + self.vocabulary
+        )  # Dùng cho add-one smoothing
+        self.denominator_y = (
+            self.class_y + self.vocabulary
+        )  # Dùng cho add-one smoothing
         self.check_count = 0
 
     def caculate_probability(self, single_doc):
         probability_class_x = 0.0
         probability_class_y = 0.0
-        sum_x = 0.0 # xác suất của spam
-        sum_y = 0.0 # xác suất không spam
+        sum_x = 0.0  # xác suất của spam
+        sum_y = 0.0  # xác suất không spam
         for word in single_doc:
             # Lấy dữ liệu từ collection WordCounts
             dict_two = self.db.WordCounts.find_one({"_id": word})
@@ -41,42 +45,40 @@ class Naive_bayes_classifier:
         if x > y:
             return 1, 0
         return 0, 1
-    def naive_bayes_classifier(self, test_docs):
-        if self.show:
-            print("Mapreduce already done")
-            print("Naive Bayes Classifier for mini test started")
-            for doc in test_docs:
-                predclassX, predclassY = self.caculate_probability(create_preprocessed_content(doc))
-                # Update dự đoán vào MongoDB
-                if predclassX:
-                    print(f"{doc} : Spam")
-                else:
-                    print(f"{doc} : Not Spam")
-        else:
-            print("Set show=True to run the classifier")
+
+    def classifier(self, email: str) -> str:
+        preprocessed_content = create_preprocessed_content(email)
+        predclassX, predclassY = self.caculate_probability(preprocessed_content)
+        if predclassX:
+            return "Spam"
+        return "Not Spam"
 
     def naive_bayes_classifier_update_test(self):
         if not self.show:
             test_docs = self.db.test.find({"processed": {"$ne": True}}).batch_size(10)
-            if(len(list(test_docs)) == 0):
+            if len(list(test_docs)) == 0:
                 print("All documents have been processed")
                 return
-            
+
             check_count = 0
 
             # Dự đoán tất cả các document trong test set là classX (spam) hoặc classY (không spam)
-            '''Dùng context manager để quản lý con trỏ, con trỏ sẽ tự động đóng khi dùng with như này,
-            tránh lỗi timeout của cursor nếu dùng toàn bộ dữ liệu mà không thông qua batch_size'''
-            with test_docs as cursor:  
+            """Dùng context manager để quản lý con trỏ, con trỏ sẽ tự động đóng khi dùng with như này,
+            tránh lỗi timeout của cursor nếu dùng toàn bộ dữ liệu mà không thông qua batch_size"""
+            with test_docs as cursor:
                 for doc in cursor:
-                    predclassX, predclassY = self.caculate_probability(doc['content'])
+                    predclassX, predclassY = self.caculate_probability(doc["content"])
                     # Update dự đoán vào MongoDB
                     try:
                         self.db.test.update_one(
                             {"_id": doc["_id"]},  # Sử dụng _id để xác định document
-                            {"$set": {"predclassX": predclassX,
+                            {
+                                "$set": {
+                                    "predclassX": predclassX,
                                     "predclassY": predclassY,
-                                    "processed": True}},
+                                    "processed": True,
+                                }
+                            },
                         )
                     except Exception as e:
                         print(f"Error updating document")
