@@ -1,30 +1,54 @@
-# Document Classification#
-Multinomial Naive Bayes classifier for document classification.
+# Đề tài
 
-## Purpose ##
-The project I did for my Information Retrieval course. This project is solely for sharing my implementation, not for further development.
+Áp dụng map-reduce trong cơ sở dữ liệu MongoDB để giải quyết bài toán phân loại email spam.
 
-## Description ##
-The implementation of Naive Bayes classifier for classification of 120 blog files. The classifier is implemented on top of NoSQL database MongoDB. The MapReduce model is used for text categorization task. The algorithm returns a confusion matrix as an output.
+## Mục đích
 
-## Data ##
-The original data collection consisted of 120 files. The `fortnow` files correspond to posts from the Computational Complexity blog by Prof Lance Fortnow. The `random` files come from blogs chosen “at random” by a human. The dataset was split in two parts:  
+Phân loại email spam dựa trên thuật toán Naive Bayes
 
-* `data/train` : fortnow1 - fortnow30, random1 - random30
-* `data/test` : fortnow31 - fortnow60, random31 - random60.
+## Mô tả
 
-## Stack ##
-* Language : Python 2.7
-* Libraries : Pymongo, nltk, Math, os, glob, codecs, re, bson
+Cài đặt thuật toán Naive Bayes trên bộ dữ liệu email đã được gắn nhãn. Bộ phân loại được xây dựng dựa trên cơ sở dữ liệu MongoDB.
 
-## How to run ##
-* Start the server (`mongod`) on your machine by running the following command in terminal : `mongod -dbpath <path>`
-* Start the client (`mongo`) by running the following command in terminal : `mongo`
-* Run `DocumentClassification.py`
+## Dữ liệu
 
-## Notes ##
-* To create a collection with preprocessed files, in functions `create_train_collection` and `create_test_collection` :
-comment the line `my_dict['content'] = create_content(file)`;
-uncomment the line `my_dict['content'] = create_preprocessed_content(file)`.
-* For a full description of data pre-processing, formulas and results check my report in the `docs` folder.
+Dữ liệu lấy từ nguồn Kaggle: [jackksoncsie/spam-email-dataset](https://www.kaggle.com/datasets/jackksoncsie/spam-email-dataset)
+Bộ dữ liệu: Gồm 5695 email trong đó có 1335 email spam đã được gắn nhãn
 
+## Kiến thức
+
+- Ngôn ngữ: Python 3.x
+- Libraries: Pymongo, nltk, Math, os, glob, codecs, re, bson, flask
+
+## Hướng dẫn chạy
+
+- Cấu hình file môi trường `.env` trong thư mục `/src`
+  ```
+  MONGODB_URI=<mongodb_uri>
+  ```
+- Chạy `python DocumentClassification.py` để tạo tập dữ liệu train
+- Chạy `python app.py` để khởi chạy UI
+
+## Thành viên nhóm
+
+<table>
+    <th>
+        <td>Họ tên</td>
+        <td>Email</td>
+    </th>
+    <tr>
+        <td>1</td>
+        <td>Vũ Thành Đạt</td>
+        <td><a href="mailto:22022620@vnu.edu.vn">22022620@vnu.edu.vn</a></td>
+    </tr>
+    <tr>
+        <td>2</td>
+        <td>Nguyễn Trần Hải Ninh</td>
+        <td><a href="mailto:22022526@vnu.edu.vn">22022526@vnu.edu.vn</a></td>
+    </tr>
+    <tr>
+        <td>3</td>
+        <td>Nguyễn Quang Thao</td>
+        <td><a href="mailto:22022619@vnu.edu.vn">22022619@vnu.edu.vn</a></td>
+    </tr>
+</table>
