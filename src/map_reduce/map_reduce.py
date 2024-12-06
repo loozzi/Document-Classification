@@ -12,7 +12,7 @@ def map_reduce(trained=False, db=None):
 
 
     # TotalCounts
-    dict_temp = list(db.train.aggregate(pipeline_total_counts()))[0]
+    dict_temp = list(db.all_data.aggregate(pipeline_total_counts()))[0]
     vocabulary = dict_temp["V"]
     db.TotalCounts.insert_one(dict_temp)
     print("TotalWords: ", vocabulary)
