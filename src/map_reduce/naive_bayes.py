@@ -34,8 +34,8 @@ class NaiveBayesClassifier:
                 word_class_y = 0.0
 
             # Tính toán xác suất log với add-one smoothing
-            sum_x += math.log10((word_class_x + 1.0) / self.denominator_x)
-            sum_y += math.log10((word_class_y + 1.0) / self.denominator_y)
+            sum_x += math.log10((word_class_x + 1.0) / (word_class_x + word_class_y + self.vocabulary))
+            sum_y += math.log10((word_class_y + 1.0) / (word_class_x + word_class_y + self.vocabulary))
 
         # Thêm xác suất lớp vào tổng
         x = sum_x + probability_class_x
